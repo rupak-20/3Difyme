@@ -1,4 +1,3 @@
-from cgi import print_arguments
 import cv2 as cv
 import sys
 
