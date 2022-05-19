@@ -3,7 +3,7 @@ import sys
 import numpy as np
 
 
-def draw_uv(image_path: str, uv_path: str):
+def recolour(image_path: str, uv_path: str):
     # open wavefront file and get texture coordinates
     try:
         with open(uv_path, 'r') as uv:
@@ -13,7 +13,6 @@ def draw_uv(image_path: str, uv_path: str):
             img = cv.imread(image_path)
             vertices = {}
             faces = {}
-            face = []
             i, j = 0, 0  # pointer variables
 
             for line in lines:
@@ -65,7 +64,7 @@ def draw_uv(image_path: str, uv_path: str):
 
             # create a mask
             mask = np.zeros(
-                (img.shape[0], img.shape[1], img.shape[2]), dtype=np.int8)
+                (img.shape[0], img.shape[1], img.shape[2]), dtype=np.uint8)
 
             LIPS = {4, 5, 10, 11, 12, 13, 18, 19, 20, 21, 46, 47, 48, 49, 62, 63, 64, 65, 66, 67, 68, 69, 86, 87, 88, 89, 122, 123, 124, 125, 138, 139, 140, 141, 142, 143, 144, 145, 258, 259, 260, 261, 334, 335, 336, 337, 342, 343, 344, 345, 358, 359, 360, 361, 366, 367, 368, 369, 390, 391, 392, 393, 398, 399, 400, 401, 414, 415, 416, 417, 422,
                     423, 424, 425, 438, 439, 440, 441, 446, 447, 448, 449, 462, 463, 464, 465, 478, 479, 480, 481, 514, 515, 516, 517, 606, 607, 608, 609, 614, 615, 616, 617, 674, 675, 676, 677, 678, 679, 680, 681, 682, 683, 684, 685, 698, 699, 700, 701, 702, 703, 704, 705, 882, 883, 884, 885, 886, 887, 888, 889, 890, 891, 892, 893, 894, 895, 896, 897}
@@ -94,10 +93,23 @@ def draw_uv(image_path: str, uv_path: str):
             else:
                 print('mask saved')
 
+            # preserving colour
+            img = cv.imread('face.png')
+            albedo = cv.imread('face_albedo.png')
+            mask = mask//255
+            albedo = img*mask + albedo*(1-mask)
+
+            # write the final image file
+            status = cv.imwrite('coloured.png', albedo)
+            if status == False:
+                print('coloured image not saved')
+            else:
+                print('coloured image saved')
+
     except FileNotFoundError:
         print('wavefront or image file is missing')
 
 
 if __name__ == '__main__':
     img, uv = sys.argv[1:]
-    draw_uv(img, uv)
+    recolour(img, uv)
