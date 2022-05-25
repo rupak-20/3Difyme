@@ -6,7 +6,7 @@ import numpy as np
 
 
 # conveting image to .obj file
-def imageToOBJ(image: np.mat, export_path: str) -> None:
+def imageToOBJ(image: np.mat, export_path: str, scale: float = 3) -> None:
     mp_pose = mp.solutions.pose
     with mp_pose.Pose(
             static_image_mode=True,
@@ -19,7 +19,7 @@ def imageToOBJ(image: np.mat, export_path: str) -> None:
 
         if results.pose_landmarks:
             with open(export_path, 'w') as export:
-                scale = 3
+
                 nose_vertex = (results.pose_landmarks.landmark[mp_pose.PoseLandmark.NOSE].x, results.pose_landmarks.landmark[
                                mp_pose.PoseLandmark.NOSE].y, results.pose_landmarks.landmark[mp_pose.PoseLandmark.NOSE].z)
                 left_foot_vertex = (results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_FOOT_INDEX].x, results.pose_landmarks.landmark[
@@ -27,14 +27,14 @@ def imageToOBJ(image: np.mat, export_path: str) -> None:
                 right_foot_vertex = (results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_FOOT_INDEX].x, results.pose_landmarks.landmark[
                                mp_pose.PoseLandmark.RIGHT_FOOT_INDEX].y, results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_FOOT_INDEX].z)
 
-                lowest_point = left_foot_vertex if left_foot_vertex[1] < right_foot_vertex[1] else right_foot_vertex
+                lowest_point = left_foot_vertex if left_foot_vertex[1] > right_foot_vertex[1] else right_foot_vertex
                 vertices = {}
                 _ = 1
 
                 # writing vertices
                 export.write('o face\nmtllib face.mtl\n\n# Vertices\n')
                 for id, lm in enumerate(results.pose_landmarks.landmark):
-                    x, y, z = (lm.x - nose_vertex[0]) * scale, (-lm.y + lowest_point[1]) * scale, (lm.z - lowest_point[2]) * scale
+                    x, y, z = (lm.x - nose_vertex[0]) * scale, (-lm.y + lowest_point[1]) * scale, (-lm.z + lowest_point[2]) / scale
 
                     # saving vertices for future
                     vertices[_] = (x, y, z)
