@@ -1,2 +1,7 @@
 backup
 Task-3
+**/*.jpg
+**/*.png
+**/*.blend
+**/*.obj
+**/*.fbx
