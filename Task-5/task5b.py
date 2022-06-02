@@ -1,31 +1,12 @@
 import bpy
+from math import acos
 import numpy as np
 from collections import OrderedDict
-from mathutils import Vector
+from mathutils import Vector, Matrix
 
 
 # making pose from the given vertices
 def armaturePose(vertices: np.mat) -> None:
-
-    # Enter the OBJECT mode
-    bpy.ops.object.mode_set( mode = 'OBJECT' )
-    # Select and delete all objects to start with a clean space
-    bpy.ops.object.select_all(action='SELECT')
-    bpy.ops.object.delete(use_global=False, confirm=False)
-
-    # Import the source object and shift it to x=-1
-    src_FBXfilePath = 'C:/Users/Rupak/Documents/Study/Placement/Internship/PixelHash/Task-5/temp.obj'
-    src_obj = bpy.ops.import_scene.obj( filepath = src_FBXfilePath )
-    selected_obj = bpy.context.selected_objects
-    for obj in selected_obj:
-        obj.scale[0] = 0.03
-        obj.scale[1] = 0.03
-        obj.scale[2] = 0.03
-        obj.location[0] = 0
-    
-    src_OBJfilePath = 'C:/Users/Rupak/Documents/Study/Placement/Internship/PixelHash/Task-5/source.fbx'
-    src_obj = bpy.ops.import_scene.fbx( filepath = src_OBJfilePath )
-    selected_obj = bpy.context.active_object
 
     ARMS_LEGS_FOOT = OrderedDict({
                 'mixamorig:LeftArm': (11, 13), 'mixamorig:RightArm': (12, 14),
@@ -37,103 +18,183 @@ def armaturePose(vertices: np.mat) -> None:
                 'mixamorig:LeftToe_End': (29, 31), 'mixamorig:RightToe_End': (30, 32)
                 })
                 
-    SPINE = OrderedDict({'mixamorig:Hips': (), 'mixamorig:Spine' : (),
-                        'mixamorig:Spine1': (), 'mixamorig:Spine2': ()})
-                        
-    parent_tail_loc = {}
+    SPINE = OrderedDict({
+                'mixamorig:Hips': (), 'mixamorig:Spine' : (),
+                'mixamorig:Spine1': (), 'mixamorig:Spine2': ()
+                        })
 
-    HEAD = {''}
+    HAND = OrderedDict({
+                'mixamorig:LeftHand': (15, 17, 19), 'mixamorig:RightHand': (16, 18, 20),
+                'mixamorig:LeftHandThumb1': (15, 21), 'mixamorig:RightHandThumb1': (16, 22),
+                'mixamorig:LeftHandThumb2': (15, 21), 'mixamorig:RightHandThumb2': (16, 22),
+                'mixamorig:LeftHandThumb3': (15, 21), 'mixamorig:RightHandThumb3': (16, 22),
+                'mixamorig:LeftHandThumb4': (15, 21), 'mixamorig:RightHandThumb4': (16, 22),
+                'mixamorig:LeftHandIndex1': (15, 19), 'mixamorig:RightHandIndex1': (16, 20),
+                'mixamorig:LeftHandIndex2': (15, 19), 'mixamorig:RightHandIndex2': (16, 20),
+                'mixamorig:LeftHandIndex3': (15, 19), 'mixamorig:RightHandIndex3': (16, 20),
+                'mixamorig:LeftHandIndex4': (15, 19), 'mixamorig:RightHandIndex4': (16, 20),
+                'mixamorig:LeftHandMiddle1': (15, 17, 19), 'mixamorig:RightHandMiddle1': (16, 18, 20),
+                'mixamorig:LeftHandMiddle2': (15, 17, 19), 'mixamorig:RightHandMiddle2': (16, 18, 20),
+                'mixamorig:LeftHandMiddle3': (15, 17, 19), 'mixamorig:RightHandMiddle3': (16, 18, 20),
+                'mixamorig:LeftHandMiddle4': (15, 17, 19), 'mixamorig:RightHandMiddle4': (16, 18, 20),
+                'mixamorig:LeftHandRing1': (15, 17, 19), 'mixamorig:RightHandRing1': (16, 18, 20),
+                'mixamorig:LeftHandRing2': (15, 17, 19), 'mixamorig:RightHandRing2': (16, 18, 20),
+                'mixamorig:LeftHandRing3': (15, 17, 19), 'mixamorig:RightHandRing3': (16, 18, 20),
+                'mixamorig:LeftHandRing4': (15, 17, 19), 'mixamorig:RightHandRing4': (16, 18, 20),
+                'mixamorig:LeftHandPinky1': (15, 17), 'mixamorig:RightHandPinky1': (16, 18),
+                'mixamorig:LeftHandPinky2': (15, 17), 'mixamorig:RightHandPinky2': (16, 18),
+                'mixamorig:LeftHandPinky3': (15, 17), 'mixamorig:RightHandPinky3': (16, 18),
+                'mixamorig:LeftHandPinky4': (15, 17), 'mixamorig:RightHandPinky4': (16, 18)
+    })
 
-    # hand: (wrist, pinky, index); thumb: (wrist, thumb); pinky: (wrist, pinky); index: (wrist, index)
-    HANDS = {'mixamorig:LeftHand': (15, 17, 19), 'mixamorig:RightHand': (16, 18, 20),
-            'mixamorig:LeftHandThumb1': (15, 21), 'mixamorig:RightHandThumb1': (16, 22),
-            'mixamorig:LeftHandThumb2': (15, 21), 'mixamorig:RightHandThumb2': (16, 22),
-            'mixamorig:LeftHandThumb3': (15, 21), 'mixamorig:RightHandThumb3': (16, 22),
-            'mixamorig:LeftHandThumb4': (15, 21), 'mixamorig:RightHandThumb4': (16, 22),
-            'mixamorig:LeftHandIndex1': (15, 19), 'mixamorig:RightHandIndex1': (16, 20),
-            'mixamorig:LeftHandIndex2': (15, 19), 'mixamorig:RightHandIndex2': (16, 20),
-            'mixamorig:LeftHandIndex3': (15, 19), 'mixamorig:RightHandIndex3': (16, 20),
-            'mixamorig:LeftHandIndex4': (15, 19), 'mixamorig:RightHandIndex4': (16, 20),
-            'mixamorig:LeftHandMiddle1': (15, 17, 19), 'mixamorig:RightHandMiddle1': (16, 18, 20),
-            'mixamorig:LeftHandMiddle2': (15, 17, 19), 'mixamorig:RightHandMiddle2': (16, 18, 20),
-            'mixamorig:LeftHandMiddle3': (15, 17, 19), 'mixamorig:RightHandMiddle3': (16, 18, 20),
-            'mixamorig:LeftHandMiddle4': (15, 17, 19), 'mixamorig:RightHandMiddle4': (16, 18, 20),
-            'mixamorig:LeftHandRing1': (15, 17, 19), 'mixamorig:RightHandRing1': (16, 18, 20),
-            'mixamorig:LeftHandRing2': (15, 17, 19), 'mixamorig:RightHandRing2': (16, 18, 20),
-            'mixamorig:LeftHandRing3': (15, 17, 19), 'mixamorig:RightHandRing3': (16, 18, 20),
-            'mixamorig:LeftHandRing4': (15, 17, 19), 'mixamorig:RightHandRing4': (16, 18, 20),
-            'mixamorig:LeftHandPinky1': (15, 17), 'mixamorig:RightHandPinky1': (16, 18),
-            'mixamorig:LeftHandPinky2': (15, 17), 'mixamorig:RightHandPinky2': (16, 18),
-            'mixamorig:LeftHandPinky3': (15, 17), 'mixamorig:RightHandPinky3': (16, 18),
-            'mixamorig:LeftHandPinky4': (15, 17), 'mixamorig:RightHandPinky4': (16, 18)}
+    SPINE = OrderedDict({
+            'mixamorig:Hips': (23, 24, 11, 12), 'mixamorig:Spine': (23, 24, 11, 12),
+            'mixamorig:Spine1': (23, 24, 11, 12), 'mixamorig:Spine2': (23, 24, 11, 12)
+    })
 
     # bones to add roll to
     ROLL = {}
+    updated_pos_bones = {}
     
     ob = bpy.context.active_object
-    
+
     act_arm = bpy.context.object
     bpy.ops.object.mode_set(mode='EDIT')
-    # rotate arms, legs and foot
-    for (bone, index) in (ARMS_LEGS_FOOT).items():
+    
+    '''
+    SPINE
+    '''
+    for (bone, index) in (SPINE).items():
         
-        bone_vector = vertices[index[1]] - vertices[index[0]]
-        bone_mag = (bone_vector[0]**2 + bone_vector[1]**2 + bone_vector[2]**2)**0.5
-        bone_unit_vector = bone_vector / bone_mag
-        
-        bone_unit_vector = Vector((bone_unit_vector[0], bone_unit_vector[1], bone_unit_vector[2]))
+        print("-"*80)
+        act_arm.data.edit_bones[bone].use_inherit_rotation = False
         myBone = ob.pose.bones[bone]
-        
         print(bone)
-        print('Unit Vector: ', bone_unit_vector)
-
         print('Head: ', myBone.head)
         print('Tail: ', myBone.tail)
-        print('Tail-Head: ', myBone.vector)
         
-        bone_magnitude = (myBone.vector[0]**2 + myBone.vector[1]**2 + myBone.vector[2]**2)**0.5
-        
-        if bone == 'mixamorig:LeftArm' or bone == 'mixamorig:RightArm' or bone == 'mixamorig:LeftUpLeg' or bone == 'mixamorig:RightUpLeg':
-            
-            temp = myBone.head + (bone_unit_vector)*bone_magnitude
-            if myBone.child:
-                parent_tail_loc[myBone.child.name] = temp
-                print(parent_tail_loc[myBone.child.name])
-            act_arm.data.edit_bones[myBone.name].tail = temp
-            
-        else:
-            
-            temp = parent_tail_loc[myBone.name] + (bone_unit_vector)*bone_magnitude
-            if myBone.child:
-                parent_tail_loc[myBone.child.name] = temp
-                print(parent_tail_loc[myBone.child.name])
-            act_arm.data.edit_bones[myBone.name].tail = temp
-        
-        print('Bone Magnitude: ', bone_magnitude)
-        print(bone_unit_vector*bone_magnitude)
+        point_1 = (vertices[index[0]] + vertices[index[1]])/2
+        point_2 = (vertices[index[2]] + vertices[index[3]])/2
+        mp_bone_vector = point_2 - point_1
+        mp_bone_unit_vector = mp_bone_vector / np.linalg.norm(mp_bone_vector)
+                        
+        rotation = myBone.vector.rotation_difference(mp_bone_unit_vector)
+        print(rotation)
+        M = (
+        Matrix.Translation(myBone.head) @
+        rotation.to_matrix().to_4x4() @
+        Matrix.Translation(-myBone.head)
+        )
+        myBone.matrix = M @ myBone.matrix
         print('New Tail: ', myBone.tail)
-        print()
+    
+    '''
+    LIMBS
+    '''
+    for (bone, index) in (ARMS_LEGS_FOOT).items():
+        
+        print("-"*80)
+        act_arm.data.edit_bones[bone].use_inherit_rotation = False
+        myBone = ob.pose.bones[bone]
+        print(bone)
+        print('Head: ', myBone.head)
+        print('Tail: ', myBone.tail)
+        
+        mp_bone_vector = vertices[index[1]] - vertices[index[0]]
+        mp_bone_unit_vector = mp_bone_vector / np.linalg.norm(mp_bone_vector)    
+                        
+        rotation = myBone.vector.rotation_difference(mp_bone_unit_vector)
+        print(rotation)
+        M = (
+        Matrix.Translation(myBone.head) @
+        rotation.to_matrix().to_4x4() @
+        Matrix.Translation(-myBone.head)
+        )
+        
+#        if bone != 'mixamorig:LeftArm' and bone != 'mixamorig:RightArm' and bone != 'mixamorig:LeftUpLeg' and bone != 'mixamorig:RightUpLeg': 
+#            myBone.matrix = updated_pos_bones[bone].inverted_safe() @ myBone.matrix
+            
+        myBone.matrix = M @ myBone.matrix
+        
+#        for child in myBone.children:
+#            updated_pos_bones[child.name] = M
+        
+        print('New Tail: ', myBone.tail)
+
+    '''
+    END OF LIMBS
+    '''
+    for (bone, index) in (HAND).items():
+
+        print("-"*80)
+        act_arm.data.edit_bones[bone].use_inherit_rotation = False
+        myBone = ob.pose.bones[bone]
+        mp_bone_unit_vector = [0, 0, 0]
+        print(bone)
+        print('Head: ', myBone.head)
+        print('Tail: ', myBone.tail)
+
+        if len(index) == 3:
+
+            mp_bone_vector_1 = vertices[index[1]] - vertices[index[0]]
+            mp_bone_vector_2 = vertices[index[2]] - vertices[index[0]]
+            mp_bone_vector_res = (mp_bone_vector_1 + mp_bone_vector_2) / 2
+            mp_bone_unit_vector = mp_bone_vector_res / np.linalg.norm(mp_bone_vector_res)
+
+        elif len(index) == 2:
+
+            mp_bone_vector = vertices[index[1]] - vertices[index[0]]
+            mp_bone_unit_vector = mp_bone_vector / np.linalg.norm(mp_bone_vector)
+
+
+        rotation = myBone.vector.rotation_difference(mp_bone_unit_vector)
+        print(rotation)
+        M = (
+        Matrix.Translation(myBone.head) @
+        rotation.to_matrix().to_4x4() @
+        Matrix.Translation(-myBone.head)
+        )
+        myBone.matrix = M @ myBone.matrix   
+        print('New Tail: ', myBone.tail)
+            
 
     bpy.ops.object.mode_set(mode='OBJECT')
 
 
 # driver code
 if __name__ == "__main__":
-    import_path = 'C:\\Users\\Rupak\\Documents\\Study\\Placement\\Internship\\PixelHash\\Task-5\\vertices.temp'
+    
+    bpy.ops.object.mode_set(mode='OBJECT')
+    bpy.ops.object.select_all(action='SELECT')
+    bpy.ops.object.delete(use_global=False, confirm=False)
+    # Import the source object and shift it to x=-1
+    src_FBXfilePath = 'C:/Users/srita/Desktop/3dify_task/rupak/temp.obj'
+    src_obj = bpy.ops.import_scene.obj( filepath = src_FBXfilePath )
+    selected_obj = bpy.context.selected_objects
+    for obj in selected_obj:
+        obj.scale[0] = 0.03
+        obj.scale[1] = 0.03
+        obj.scale[2] = 0.03
+        obj.location[0] = -1
+    
+    # source.fbx
+    src_OBJfilePath = 'C:/Users/srita/Desktop/3dify_task/rupak/avatar_rigged.fbx'
+    src_obj = bpy.ops.import_scene.fbx( filepath = src_OBJfilePath )
+    selected_obj = bpy.context.active_object
+    import_path = 'C:\\Users\\srita\\Desktop\\3dify_task\\rupak\\temp.obj'
     vertices = np.zeros([33, 3])
     i = 0
-
     try:
         with open(import_path, 'r') as file:
             lines = file.readlines()
-
             for line in lines:
-                _, x, y, z = list(line.split(' '))
-                print(x, y, z)
-                vertices[i][0], vertices[i][1], vertices[i][2] = x, y, z
-                i = i+1
+                if line[0] == 'v':
+                    _, x, y, z = list(line.split(' '))
+#                    print(x, y, z)
+#                    print()
+                    vertices[i][0], vertices[i][1], vertices[i][2] = x, y, z
+                    i = i+1
     
     except:
         print('file not found')
-
     armaturePose(vertices)
