@@ -5,3 +5,4 @@ Task-3
 **/*.blend
 **/*.obj
 **/*.fbx
+.vscode/
