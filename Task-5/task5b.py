@@ -1,9 +1,13 @@
-import bpy
-from math import acos
-import numpy as np
 from collections import OrderedDict
-from mathutils import Vector, Matrix
+from math import acos
 
+import bpy
+import numpy as np
+from mathutils import Matrix, Vector
+
+OBJ_PATH = 'C:/Users/Rupak/Documents/Study/Placement/Internship/PixelHash/Task-5/temp.obj'
+FBX_PATH = 'C:/Users/Rupak/Documents/Study/Placement/Internship/PixelHash/Task-5/source.fbx'
+READ_OBJ_PATH = 'C:\\Users\\Rupak\\Documents\\Study\\Placement\\Internship\\PixelHash\\Task-5\\temp.obj'
 
 # making pose from the given vertices
 def armaturePose(vertices: np.mat) -> None:
@@ -167,9 +171,9 @@ if __name__ == "__main__":
     bpy.ops.object.mode_set(mode='OBJECT')
     bpy.ops.object.select_all(action='SELECT')
     bpy.ops.object.delete(use_global=False, confirm=False)
+
     # Import the source object and shift it to x=-1
-    src_FBXfilePath = 'C:/Users/srita/Desktop/3dify_task/rupak/temp.obj'
-    src_obj = bpy.ops.import_scene.obj( filepath = src_FBXfilePath )
+    src_obj = bpy.ops.import_scene.obj( filepath = OBJ_PATH )
     selected_obj = bpy.context.selected_objects
     for obj in selected_obj:
         obj.scale[0] = 0.03
@@ -178,14 +182,12 @@ if __name__ == "__main__":
         obj.location[0] = -1
     
     # source.fbx
-    src_OBJfilePath = 'C:/Users/srita/Desktop/3dify_task/rupak/avatar_rigged.fbx'
-    src_obj = bpy.ops.import_scene.fbx( filepath = src_OBJfilePath )
+    src_obj = bpy.ops.import_scene.fbx( filepath = FBX_PATH )
     selected_obj = bpy.context.active_object
-    import_path = 'C:\\Users\\srita\\Desktop\\3dify_task\\rupak\\temp.obj'
     vertices = np.zeros([33, 3])
     i = 0
     try:
-        with open(import_path, 'r') as file:
+        with open(READ_OBJ_PATH, 'r') as file:
             lines = file.readlines()
             for line in lines:
                 if line[0] == 'v':
