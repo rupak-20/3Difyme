@@ -11,7 +11,7 @@ hair_seg
     │   evaluate.py
     │   main.py
     │
-    ├───checkpoint
+    ├───checkpoints
     │   └───default
     │           train_16.tar
     │
@@ -32,8 +32,8 @@ hair_seg
 2. install requirements from requirements.txt
 `pip install -r requirements.txt`
 
-3. get checkpoint from [here](https://drive.google.com/file/d/1x_QFQwX7WcqruU4fjXeNgHKhs7n2uzpp/view?usp=sharing) and copy the file to `hair_seg/checkpoint/default/`
-(refer [Directory Structure](#) for more detail)
+3. get checkpoint from [here](https://drive.google.com/file/d/1x_QFQwX7WcqruU4fjXeNgHKhs7n2uzpp/view?usp=sharing) and copy the file to `hair_seg/checkpoints/default/`
+(refer [Directory Structure](#directory-structure) for more detail)
 
 4. run main.py and pass an additional argument as the image path
  `python hair_seg/main.py path/to/image.jpg`
