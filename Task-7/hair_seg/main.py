@@ -1,7 +1,9 @@
-import argparse
 import os
+import sys
 
+import numpy as np
 import torch
+from cv2 import imread
 
 from dataset import ImgTransformer
 from evaluate import evaluateOne
@@ -12,6 +14,11 @@ DIR_PATH = os.path.dirname(__file__)
 USE_CUDA = torch.cuda.is_available()
 device = torch.device("cuda" if USE_CUDA else "cpu")
 
+SAVE_DIR = "checkpoints"
+MODEL_NAME = "default"
+IMSIZE = 448
+MODE = "run"
+CHECKPOINT = "train_16"
 
 def build_model(checkpoint):
     model = MobileHairNet()
@@ -25,41 +32,44 @@ def build_model(checkpoint):
     return model
 
 
-def run(args, model):
-    img_path = args.image
+def run(image, model):
+    # img_path = args.image
     model.eval()
 
-    transformer = ImgTransformer(args.imsize, color_aug=False)
-    img = transformer.load(img_path, maskpath='mask.jpg')
+    transformer = ImgTransformer(IMSIZE, color_aug=False)
+    mask = np.zeros((448, 448, 3), np.uint8)
+    img = transformer.load(image, mask)
     return evaluateOne(img, model, absolute=False)
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-m", "--mode", choices={"run"}, default="run", help="mode to run the network")
-    parser.add_argument("-cp", "--checkpoint")
-    parser.add_argument("-im", "--image")
-    parser.add_argument("--save_dir", type=str, default="checkpoints", help="folder for models")
-    parser.add_argument("--model_name", type=str, default="default", help="model name")
-    parser.add_argument("--imsize", type=int, default=448, help="training image size")
-    args = parser.parse_args()
+def main(image):
 
-    print("args: ", args)
-
-    SAVE_PATH = os.path.join(DIR_PATH, args.save_dir, args.model_name)
+    SAVE_PATH = os.path.join(DIR_PATH, SAVE_DIR, MODEL_NAME)
     print("Saving path:", SAVE_PATH)
     checkpoint_mng = CheckpointManager(SAVE_PATH)
 
     checkpoint = None
-    if args.checkpoint:
-        print("Load checkpoint:", args.checkpoint)
-        checkpoint = checkpoint_mng.load(args.checkpoint, device)
+    if CHECKPOINT:
+        print("Load checkpoint:", CHECKPOINT)
+        checkpoint = checkpoint_mng.load(CHECKPOINT, device)
 
     model = build_model(checkpoint)
 
-    if args.mode == "run":
-        return run(args, model)
+    if MODE == "run":
+        return run(image, model)
 
 
 if __name__ == "__main__":
-    print(main())
+    if len(sys.argv) > 2:
+        print('1 additional argument expected, passed', len(sys.argv) - 1)
+        print('expected "python main.py image_path"')
+
+    elif len(sys.argv) < 2:
+        print('1 additional argument expected, passed', len(sys.argv) - 1)
+        print('expected "python main.py image_path"')
+    
+    else:
+        img_path = sys.argv[1]
+    
+        img = imread(img_path)    
+        print(main(img))

@@ -72,9 +72,9 @@ class ImgTransformer:
 
         return transform_image, transform_mask
 
-    def load(self, impath, maskpath):
-        image = cv2.imread(impath, cv2.IMREAD_COLOR)
+    def load(self, image, mask):
+        # image = cv2.imread(impath, cv2.IMREAD_COLOR)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-        mask = cv2.imread(maskpath)
+        # mask = cv2.imread(maskpath)
         return self.transform(image, mask)
