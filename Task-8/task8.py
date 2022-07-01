@@ -14,14 +14,16 @@ class Headshot:
     uv = np.empty([3, 468, 2])
     faces = []      # same for every face mesh
 
+    # get images (left, center, right) and face
     def __init__(self, left_img: np.mat, center_img: np.mat, right_img: np.mat, faces: np.mat):
         self.images = [left_img, center_img, right_img]
-        print(self.images[0].shape)
-        print(self.images[1].shape)
-        print(self.images[2].shape)
+        # print(self.images[0].shape)
+        # print(self.images[1].shape)
+        # print(self.images[2].shape)
         self.faces = faces
 
-
+    
+    # get vertices from mediapipe face mesh API
     def get_vertices(self):
         mp_face_mesh = mp.solutions.face_mesh
 
@@ -48,6 +50,7 @@ class Headshot:
             self.vertices[index] = ver
 
 
+    # find hidden faces for all images
     def set_hidden_faces(self, camera_axis: np.mat, threshold: float = 90):
         for i in range(3):
             invisible = []
@@ -56,16 +59,13 @@ class Headshot:
                 # print(self.vertices[i])
                 vec1 = self.vertices[i][face[1]] - self.vertices[i][face[0]]
                 vec2 = self.vertices[i][face[2]] - self.vertices[i][face[0]]
-                # normal to face (coming out of the plane)
-                normal = np.cross(vec1, vec2)
+                normal = np.cross(vec1, vec2)   # normal to face (coming out of the plane)
 
                 normal_mag = (normal[0]**2 + normal[1]**2 + normal[2]**2)**0.5
-                camera_axis_mag = (
-                    camera_axis[0]**2 + camera_axis[1]**2 + camera_axis[2]**2)**0.5
+                camera_axis_mag = (camera_axis[0]**2 + camera_axis[1]**2 + camera_axis[2]**2)**0.5
 
                 if normal_mag != 0 and camera_axis_mag != 0:
-                    rad = acos(np.dot(normal, camera_axis) /
-                               (normal_mag*camera_axis_mag))
+                    rad = acos(np.dot(normal, camera_axis) / (normal_mag*camera_axis_mag))
                     deg = np.rad2deg(rad)
                     if deg > threshold:
                         invisible.append(index)
@@ -73,6 +73,7 @@ class Headshot:
             self.hidden_faces.append(invisible)
 
 
+    # create uv from (x, y) coords of face mesh vertices
     def create_uv(self):
         for i in range(3):
             # height, width, _ = self.images[i].shape
@@ -90,6 +91,7 @@ class Headshot:
     #     return uv
 
 
+    # draw vertices from face mesh on images
     def draw_uv(self):
         for i in range(3):
             img = np.copy(self.images[i])
@@ -98,33 +100,38 @@ class Headshot:
                 v = v*self.images[i].shape[0]
                 u = int(u)
                 v = int(v)
-                img = cv.circle(img, (u, v), radius=1, color=(0, 0, 255), thickness=1)
+                img = cv.circle(img, (u, v), radius=1, color=(0, 0, 255), thickness=2)
 
             cv.imwrite(str(i) + '.jpg', img)
 
 
+    # merge left and right image to fill hidden portions in center image
     def merge_img(self):
         self.create_uv()
-        self.draw_uv()
+        # self.draw_uv()
         consolidated_img_mask = np.zeros(self.images[1].shape, dtype=np.uint8)
 
+        # combined image mask
         for face in self.hidden_faces[1]:
             if face not in self.hidden_faces[0]:
                 # consolidated_img_mask =  cv.bitwise_or(consolidated_img_mask, self.transformed_img_patch(face, 0))
                 consolidated_img_mask =  consolidated_img_mask + self.transformed_img_patch(face, 0)
             elif face not in self.hidden_faces[2]:
-                # consolidated_img_mask += cv.bitwise_or(consolidated_img_mask, self.transformed_img_patch(face, 2))
+                # consolidated_img_mask = cv.bitwise_or(consolidated_img_mask, self.transformed_img_patch(face, 2))
                 consolidated_img_mask =  consolidated_img_mask + self.transformed_img_patch(face, 2)
 
         cv.imwrite('img_mask.jpg', consolidated_img_mask)
 
 
+    # crop and transform image patch
     def transformed_img_patch(self, face_index: int, side_index):
         hc, wc = self.images[1].shape[:2]
         hs, ws = self.images[side_index].shape[:2]
+        # source triangle ([[x1, y1], [x2, y2], [x3, y3]])
         src = np.array([[self.uv[side_index][self.faces[face_index][0]][0]*ws, self.uv[side_index][self.faces[face_index][0]][1]*hs],
                         [self.uv[side_index][self.faces[face_index][1]][0]*ws, self.uv[side_index][self.faces[face_index][1]][1]*hs],
                         [self.uv[side_index][self.faces[face_index][2]][0]*ws, self.uv[side_index][self.faces[face_index][2]][1]*hs]], dtype=int)
+        # target triangle ([[x1, y1], [x2, y2], [x3, y3]])
         tgt = np.array([[self.uv[1][self.faces[face_index][0]][0]*wc, self.uv[1][self.faces[face_index][0]][1]*hc],
                         [self.uv[1][self.faces[face_index][1]][0]*wc, self.uv[1][self.faces[face_index][1]][1]*hc],
                         [self.uv[1][self.faces[face_index][2]][0]*wc, self.uv[1][self.faces[face_index][2]][1]*hc]], dtype=int)
@@ -157,6 +164,7 @@ class Headshot:
         return dst
 
 
+    # write .obj files for face mesh
     def write_obj(self, obj_path: str, save_hidden: bool = True, save_faces: bool = True):
         for i, file_name in enumerate(['left', 'center', 'right']):
             with open(obj_path + '/' + file_name + '.obj', 'w') as export:
@@ -173,6 +181,7 @@ class Headshot:
                         export.writelines(
                             'f ' + str(face[0] + 1) + ' ' + str(face[1] + 1) + ' ' + str(face[2] + 1) + '\n')
 
+        # save another .obj file for hidden vertices
         if save_hidden == True:
             for i, file_name in enumerate(['left_hidden', 'center_hidden', 'right_hidden']):
                 with open(obj_path + '/' + file_name + '.obj', 'w') as export:
@@ -191,6 +200,7 @@ class Headshot:
                     export.write('\n\n#Faces\n')
 
 
+# get faces from a pre-existing face_mesh.obj file
 def get_faces(obj_path: str) -> list:
     faces = []
 
@@ -208,6 +218,7 @@ def get_faces(obj_path: str) -> list:
     return faces
 
 
+# driver code
 def main(left_img_path: str, center_img_path: str, right_img_path: str, obj_path: str):
     threshold = 90      # threshold angle in deg
     camera_axis = np.array([0, 0, 1])
@@ -227,6 +238,6 @@ def main(left_img_path: str, center_img_path: str, right_img_path: str, obj_path
 
 
 if __name__ == "__main__":
-    left_img_path, center_img_path, right_img_path, obj_path = sys.argv[
-        1], sys.argv[2], sys.argv[3], sys.argv[4]
+    # requires left img, center img, right img and face_mesh obj file path
+    left_img_path, center_img_path, right_img_path, obj_path = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
     main(left_img_path, center_img_path, right_img_path, obj_path)
