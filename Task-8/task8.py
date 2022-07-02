@@ -67,7 +67,7 @@ class Headshot:
                 if normal_mag != 0 and camera_axis_mag != 0:
                     rad = acos(np.dot(normal, camera_axis) / (normal_mag*camera_axis_mag))
                     deg = np.rad2deg(rad)
-                    if deg > threshold:
+                    if deg < threshold:
                         invisible.append(index)
 
             self.hidden_faces.append(invisible)
@@ -120,7 +120,7 @@ class Headshot:
                 # consolidated_img_mask = cv.bitwise_or(consolidated_img_mask, self.transformed_img_patch(face, 2))
                 consolidated_img_mask =  consolidated_img_mask + self.transformed_img_patch(face, 2)
 
-        cv.imwrite('img_mask.jpg', consolidated_img_mask)
+        cv.imwrite('consolidated_img_mask.jpg', consolidated_img_mask)
 
 
     # crop and transform image patch
@@ -135,6 +135,13 @@ class Headshot:
         tgt = np.array([[self.uv[1][self.faces[face_index][0]][0]*wc, self.uv[1][self.faces[face_index][0]][1]*hc],
                         [self.uv[1][self.faces[face_index][1]][0]*wc, self.uv[1][self.faces[face_index][1]][1]*hc],
                         [self.uv[1][self.faces[face_index][2]][0]*wc, self.uv[1][self.faces[face_index][2]][1]*hc]], dtype=int)
+
+        # code to verify the target or source points below. result stored in consolidated_img_mask
+        # dst = np.zeros([hc, wc, 3], dtype = np.uint8)
+        # for i in range(3):
+        #     u, v = tgt[i]
+        #     dst = cv.circle(dst, (u, v), radius=1, color=(255, 255, 255), thickness=2)
+
         r1 = cv.boundingRect(src)
         r2 = cv.boundingRect(tgt)
         tri1Cropped = []
@@ -155,11 +162,10 @@ class Headshot:
         cv.drawContours(mask, [src_pts], -1, (255, 255, 255), -1, cv.LINE_AA)
         # do bit-op
         dst = cv.bitwise_and(base, base, mask=mask)
-        cv.imwrite('dst.jpg', dst)
 
         # apply affine transformation to dst
         M = cv.getAffineTransform(np.float32(tri1Cropped), np.float32(tri2Cropped))
-        dst = cv.warpAffine(dst, M, base.shape[:2], None, flags=cv.INTER_LINEAR, borderMode=cv.BORDER_REFLECT_101)
+        dst = cv.warpAffine(dst, M, base.shape[-2::-1], None, flags=cv.INTER_LINEAR, borderMode=cv.BORDER_REFLECT_101)
 
         return dst
 
