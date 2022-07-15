@@ -84,10 +84,10 @@ def ignore_vertices(file_path: str) -> set:
 
 
 if __name__ == '__main__':
-    obj = '/home/rupak/Documents/Study/Placement/Internship/PixelHash/Task-6/obj/face.obj'
-    mapping = '/home/rupak/Documents/Study/Placement/Internship/PixelHash/Task-6/txt/skimmed_main_mapping.txt'
-    export = '/home/rupak/Documents/Study/Placement/Internship/PixelHash/Task-6/obj/vertices.obj'
-    ignore_path = '/home/rupak/Documents/Study/Placement/Internship/PixelHash/Task-6/txt/ignore_vertices.txt'
+    obj = 'obj/face.obj'
+    mapping = 'txt/skimmed_main_mapping.txt'
+    export = 'obj/vertices.obj'
+    ignore_path = 'txt/ignore_vertices.txt'
     ignore = ignore_vertices(ignore_path)
     vertices = get_vertices(obj)
     outside = outside_triangle(ignore, vertices, mapping)
