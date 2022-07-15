@@ -37,6 +37,7 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+*.tar
 MANIFEST
 
 # PyInstaller
